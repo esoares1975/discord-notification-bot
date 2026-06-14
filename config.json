@@ -1,0 +1,17 @@
+
+{
+  "watchChannels": {
+    "news": "",
+    "guides": "",
+    "videos": ""
+  },
+  "notifyChannels": {
+    "pt": "",
+    "en": "",
+    "es": "",
+    "fr": "",
+    "it": "",
+    "de": "",
+    "ar": ""
+  }
+}
