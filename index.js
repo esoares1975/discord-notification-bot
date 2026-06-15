@@ -1,3 +1,17 @@
+import express from "express";
+
+const app = express();
+
+app.get("/", (req, res) => {
+    res.status(200).send("Discord Notification Bot Online");
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Health Server running on ${PORT}`);
+});
+
 // Inicialização correta das variáveis de ambiente no padrão CommonJS
 require('dotenv').config();
 
