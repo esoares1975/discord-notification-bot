@@ -61,12 +61,6 @@ function logger(level, message, error = null) {
 const config = JSON.parse(
     fs.readFileSync("./config.json", "utf8")
 );
-//const configPath = path.join(__dirname, 'config.json');
-//let config = null;
-
-const config = JSON.parse(
-    fs.readFileSync("./config.json", "utf8")
-);
 
 logger("info", "Configurações carregadas.");
 
