@@ -1,7 +1,7 @@
+import express from "express";
 import dotenv from "dotenv";
 
 dotenv.config();
-
 const app = express();
 
 app.get("/", (req, res) => {
@@ -15,7 +15,7 @@ app.listen(PORT, () => {
 });
 
 // Inicialização correta das variáveis de ambiente no padrão CommonJS
-require('dotenv').config();
+//require('dotenv').config();
 
 import {
     Client,
@@ -35,7 +35,7 @@ import fs from "fs";
 import path from "path";
 
 import { fileURLToPath } from "url";
-import path from "path";
+//import path from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,13 +64,11 @@ const config = JSON.parse(
 //const configPath = path.join(__dirname, 'config.json');
 //let config = null;
 
-try {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    logger('info', 'Configurações do JSON carregadas com sucesso.');
-} catch (err) {
-    logger('critical', 'Falha fatal ao ler o arquivo config.json.', err);
-    process.exit(1);
-}
+const config = JSON.parse(
+    fs.readFileSync("./config.json", "utf8")
+);
+
+logger("info", "Configurações carregadas.");
 
 const CATEGORY_COLORS = {
     news: 0xFF4B4B,    // Vermelho
