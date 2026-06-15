@@ -1,5 +1,5 @@
 # fly.toml
-app = "discord-notification-bot"
+app = "discord-notification-bot-u0764w"
 primary_region = "gru"
 
 kill_signal = "SIGINT"
