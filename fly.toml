@@ -1,28 +1,32 @@
+# fly.toml
 app = "discord-notification-bot"
-
 primary_region = "gru"
 
 kill_signal = "SIGINT"
-kill_timeout = "5s"
+kill_timeout = "30s"
 
 [build]
 
 [env]
   NODE_ENV = "production"
+  PORT = "3000"
 
-[[services]]
+[http_service]
   internal_port = 3000
-  protocol = "tcp"
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
 
-  [[services.ports]]
-    port = 80
-    handlers = ["http"]
-
-  [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
-
-  [[services.tcp_checks]]
+  [[http_service.checks]]
     interval = "15s"
-    timeout = "2s"
-    grace_period = "10s"
+    timeout = "5s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
