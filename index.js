@@ -1,4 +1,6 @@
+// Inicialização correta das variáveis de ambiente no padrão CommonJS
 require('dotenv').config();
+
 const { 
     Client, 
     GatewayIntentBits, 
@@ -23,7 +25,7 @@ const client = new Client({
     ]
 });
 
-// Inicializa o tradutor usando a chave de API do Google Cloud
+// Inicializa o tradutor usando a chave de API do Google Cloud armazenada no Fly.io
 const translate = new Translate({ key: process.env.GOOGLE_TRANSLATE_KEY });
 
 function logger(level, message, error = null) {
@@ -37,31 +39,31 @@ let config = null;
 
 try {
     config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    logger('info', 'Configurações carregadas.');
+    logger('info', 'Configurações do JSON carregadas com sucesso.');
 } catch (err) {
-    logger('critical', 'Falha ao ler config.json.', err);
+    logger('critical', 'Falha fatal ao ler o arquivo config.json.', err);
     process.exit(1);
 }
 
 const CATEGORY_COLORS = {
-    news: 0xFF4B4B,
-    guides: 0x2ECC71,
-    videos: 0x3498DB
+    news: 0xFF4B4B,    // Vermelho
+    guides: 0x2ECC71,  // Verde
+    videos: 0x3498DB   // Azul
 };
 
 client.once('ready', async () => {
-    logger('info', `Bot online como: ${client.user.tag}`);
+    logger('info', `Bot conectado e operacional como: ${client.user.tag}`);
     const commands = [{
         name: 'status',
-        description: 'Valida as rotas operacionais de idiomas.',
+        description: 'Valida as rotas operacionais de monitoramento e envio de idiomas.',
         default_member_permissions: PermissionFlagsBits.Administrator.toString()
     }];
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
         await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-        logger('info', 'Comandos Slash registrados.');
+        logger('info', 'Comandos Slash administrativos registrados globalmente.');
     } catch (error) {
-        logger('error', 'Erro ao registrar comandos Slash.', error);
+        logger('error', 'Erro ao registrar comandos Slash no gateway da API.', error);
     }
 });
 
@@ -72,16 +74,18 @@ client.on('messageCreate', async (message) => {
     const category = Object.keys(watchChannels).find(key => watchChannels[key] === message.channel.id);
     if (!category) return;
 
-    logger('info', `Nova publicação em #${message.channel.name} [${category.toUpperCase()}]`);
+    logger('info', `Nova publicação interceptada em #${message.channel.name} [${category.toUpperCase()}]`);
 
     const originalText = message.content;
+    const embedColor = CATEGORY_COLORS[category] || 0x2B2D31;
+    const linkButton = new ButtonBuilder().setLabel('Abrir Publicação Original').setStyle(ButtonStyle.Link).setURL(message.url);
+    const interactiveRow = new ActionRowBuilder().addComponents(linkButton);
     
-    // Se a mensagem não tiver texto (ex: apenas uma imagem), define um padrão sem tradução
+    // Tratamento para caso o post não possua texto (ex: postou apenas uma imagem ou anexo)
     if (!originalText) {
-        const embedColor = CATEGORY_COLORS[category] || 0x2B2D31;
         const fallbackEmbed = new EmbedBuilder()
             .setTitle(`📢 Nova Atualização em [${category.toUpperCase()}]`)
-            .setDescription('A publicação original contém um anexo de mídia ou conteúdo externo.')
+            .setDescription('A publicação original contém um anexo de mídia ou conteúdo externo. Acesse-a pelo botão abaixo.')
             .setColor(embedColor)
             .setTimestamp();
             
@@ -89,20 +93,14 @@ client.on('messageCreate', async (message) => {
             fallbackEmbed.setImage(message.attachments.first().url);
         }
         
-        const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setLabel('Abrir Publicação').setStyle(ButtonStyle.Link).setURL(message.url));
-        
         for (const [langCode, targetId] of Object.entries(notifyChannels)) {
             const ch = await client.channels.fetch(targetId).catch(() => null);
-            if (ch) ch.send({ embeds: [fallbackEmbed], components: [row] });
+            if (ch) ch.send({ embeds: [fallbackEmbed], components: [interactiveRow] });
         }
         return;
     }
 
-    // Processamento de tradução e envio dinâmico por idioma
-    const embedColor = CATEGORY_COLORS[category] || 0x2B2D31;
-    const linkButton = new ButtonBuilder().setLabel('Abrir Publicação Original').setStyle(ButtonStyle.Link).setURL(message.url);
-    const interactiveRow = new ActionRowBuilder().addComponents(linkButton);
-
+    // Processamento assíncrono e tradução sob demanda para cada canal de destino
     const distributionPromises = Object.entries(notifyChannels).map(async ([langCode, targetChannelId]) => {
         try {
             const targetChannel = await client.channels.fetch(targetChannelId).catch(() => null);
@@ -110,15 +108,13 @@ client.on('messageCreate', async (message) => {
 
             let translatedText = originalText;
             
-            // Solicita a tradução para a API do Google Cloud
             try {
                 const [translation] = await translate.translate(originalText, langCode);
                 translatedText = translation;
             } catch (translationError) {
-                logger('error', `Falha ao traduzir para o idioma [${langCode.toUpperCase()}], enviando texto original.`, translationError);
+                logger('error', `Falha ao traduzir para o idioma [${langCode.toUpperCase()}], enviando texto original como contingência.`, translationError);
             }
 
-            // Monta o Embed com o texto já traduzido
             const updateEmbed = new EmbedBuilder()
                 .setTitle(`📢 [${langCode.toUpperCase()}] • Nova Atualização / New Update`)
                 .setDescription(translatedText)
@@ -138,9 +134,9 @@ client.on('messageCreate', async (message) => {
                 embeds: [updateEmbed], 
                 components: [interactiveRow] 
             });
-            logger('info', `Notificação traduzida e enviada para: [${langCode.toUpperCase()}]`);
+            logger('info', `Notificação traduzida enviada com sucesso para: [${langCode.toUpperCase()}]`);
         } catch (sendError) {
-            logger('error', `Falha na rota [${langCode.toUpperCase()}]`, sendError);
+            logger('error', `Falha na rota de envio [${langCode.toUpperCase()}]`, sendError);
         }
     });
 
