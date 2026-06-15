@@ -1,4 +1,6 @@
-import express from "express";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 
@@ -15,20 +17,28 @@ app.listen(PORT, () => {
 // Inicialização correta das variáveis de ambiente no padrão CommonJS
 require('dotenv').config();
 
-const { 
-    Client, 
-    GatewayIntentBits, 
-    EmbedBuilder, 
-    ActionRowBuilder, 
-    ButtonBuilder, 
+import {
+    Client,
+    GatewayIntentBits,
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
     ButtonStyle,
     REST,
     Routes,
     PermissionFlagsBits
-} = require('discord.js');
-const { Translate } = require('@google-cloud/translate').v2;
-const fs = require('fs');
-const path = require('path');
+} from "discord.js";
+import pkg from "@google-cloud/translate";
+
+const { Translate } = pkg.v2;
+import fs from "fs";
+import path from "path";
+
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Inicialização do cliente Discord e do tradutor do Google
 const client = new Client({
@@ -48,8 +58,11 @@ function logger(level, message, error = null) {
     console.log(`[${timestamp}] [${level.toUpperCase()}] ${message}${errorDetails}`);
 }
 
-const configPath = path.join(__dirname, 'config.json');
-let config = null;
+const config = JSON.parse(
+    fs.readFileSync("./config.json", "utf8")
+);
+//const configPath = path.join(__dirname, 'config.json');
+//let config = null;
 
 try {
     config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
